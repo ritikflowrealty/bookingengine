@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #1c2033;
+  --purple: #7a2db0;
+  --magenta: #c2276f;
+  --royal: #3d5fd9;
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --muted: #5b6072;
+  --line: #e6e1d6;
+  /* Status colours: one source of truth for grid, 3D, plot map and legends. */
+  --st-available: #2e9e5b;
+  --st-on_hold: #e0a100;
+  --st-booked: #3d5fd9;
+  --st-sold: #8530bb;
+  --st-blocked: #9aa0ad;
+}
+
+:root[data-theme="dark"] {
+  --ink: #eef0f6;
+  --bg: #14172a;
+  --surface: #1c2033;
+  --muted: #a4a9bb;
+  --line: #2e3547;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-purple: var(--purple);
+  --color-magenta: var(--magenta);
+  --color-royal: var(--royal);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-sans: var(--font-work-sans);
+  --font-heading: var(--font-outfit);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-outfit);
+}
