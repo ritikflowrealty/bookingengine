@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Copy, ExternalLink, MessageCircle } from "lucide-react";
 import type { BookingStatus } from "@/lib/booking/state";
 import { Button, Card, cx, Field, Input, Select } from "@/components/ui";
-import { KYC_TYPES } from "@/lib/kyc";
+import { KYC_TYPES } from "@/lib/kyc-types";
 import { advanceBookingAction, cancelBookingAction, recordOfflinePaymentAction, verifyKycAction } from "@/app/actions/bookings";
 
 type Doc = { id: string; type: string; name: string; url: string; verified: boolean };
 
 export function BookingActions({ bookingId, status, kycStatus, bookingLink, tokenAmount, docs, pendingCancellation }: { bookingId: string; status: BookingStatus; kycStatus: string; bookingLink: string; tokenAmount: number; docs: Doc[]; pendingCancellation: boolean }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [mode, setMode] = useState("UPI");
@@ -20,6 +22,7 @@ export function BookingActions({ bookingId, status, kycStatus, bookingLink, toke
     start(async () => {
       const r = await fn();
       setMsg(r.ok ? { ok: true, text: ok } : { ok: false, text: r.error ?? "Failed" });
+      if (r.ok) router.refresh();
     });
   const link = typeof window !== "undefined" ? window.location.origin + bookingLink : bookingLink;
   const live = status !== "cancelled" && status !== "registered";
@@ -92,10 +95,18 @@ export function BookingActions({ bookingId, status, kycStatus, bookingLink, toke
                     {d.name} <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
-                <Button size="sm" variant={d.verified ? "secondary" : "primary"} disabled={pending} onClick={() => act(() => verifyKycAction(bookingId, d.id, !d.verified), d.verified ? "Marked unverified" : "Verified")}>
-                  {d.verified ? <Check className="h-4 w-4 text-[#2e9e5b]" /> : null}
-                  {d.verified ? "Verified" : "Verify"}
-                </Button>
+                {d.verified ? (
+                  <span className="flex items-center gap-2 text-sm text-[#1f6f40]">
+                    <Check className="h-4 w-4" /> Verified
+                    <button className="text-xs text-muted underline-offset-2 hover:underline" disabled={pending} onClick={() => act(() => verifyKycAction(bookingId, d.id, false), "Marked unverified")}>
+                      Undo
+                    </button>
+                  </span>
+                ) : (
+                  <Button size="sm" disabled={pending} onClick={() => act(() => verifyKycAction(bookingId, d.id, true), "Verified")}>
+                    Verify
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

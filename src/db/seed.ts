@@ -8,6 +8,7 @@ import plots from "./seed-data/riverine-plots.json";
 
 // Sample data only: unit structures and prices mirror the reference sheets; people and phone numbers are fictitious.
 export const DEMO_PASSWORD = "flow@1234";
+export const DEMO_KIOSK_PIN = "2468";
 
 const sipaniSeries: SeriesSpec[] = [
   { series: 1, bhk: "2BHK", typeLabel: "2BHK", description: "2 BED + 2 TOI (2BHK)", direction: "West", view: "Courtyard", tier: "Diamond", carpet: 701, balcony: 86, sbua: 1065, uds: 334, priceAttrs: { sourcingPsf: 6820, closingPsf: 6720 } },
@@ -170,7 +171,7 @@ export async function seed(db: DB, opts: { demo: boolean }) {
       { email: "leadership@flowrealty.in", name: "Leena Lead", role: "leadership", passwordHash: pw, allProjects: true },
     ])
     .returning();
-  const [tl] = await db.insert(s.users).values({ email: "teamlead@flowrealty.in", name: "Tarun Team", role: "team_lead", passwordHash: pw, managerId: leader.id }).returning();
+  const [tl] = await db.insert(s.users).values({ email: "teamlead@flowrealty.in", name: "Tarun Team", role: "team_lead", passwordHash: pw, managerId: leader.id, kioskPinHash: hashPassword(DEMO_KIOSK_PIN) }).returning();
   const [sm, ps] = await db
     .insert(s.users)
     .values([

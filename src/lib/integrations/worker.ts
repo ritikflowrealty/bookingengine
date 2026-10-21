@@ -50,5 +50,6 @@ async function perform(db: DB, job: typeof s.syncJobs.$inferSelect) {
     return sendTemplate({ provider: (project?.waProvider ?? "none") as WaProvider, envKey: project?.waEnvKey }, p.to, p.template, p.params);
   }
   if (job.kind === "totality.push_booking") return pushBookingToTotality(db, (job.payload as { bookingId: string }).bookingId);
+  if (job.kind === "totality.create_lead") throw new Error("Totality lead creation not wired yet (needs Totality API reference)");
   throw new Error(`Unknown job kind ${job.kind}`);
 }

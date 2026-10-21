@@ -26,7 +26,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
     db.query.units.findFirst({ where: eq(s.units.id, b.unitId) }),
     b.customerId ? db.query.customers.findFirst({ where: eq(s.customers.id, b.customerId) }) : null,
     db.query.payments.findMany({ where: eq(s.payments.bookingId, id), orderBy: desc(s.payments.createdAt) }),
-    db.query.kycDocuments.findMany({ where: eq(s.kycDocuments.bookingId, id), columns: { content: false } }),
+    db.query.kycDocuments.findMany({ where: eq(s.kycDocuments.bookingId, id), columns: { content: false }, orderBy: s.kycDocuments.type }),
     db.query.approvals.findMany({ where: eq(s.approvals.bookingId, id), orderBy: desc(s.approvals.createdAt) }),
     db.query.auditLog.findMany({ where: (a, { and, eq: e }) => and(e(a.entity, "booking"), e(a.entityId, id)), orderBy: desc(s.auditLog.at), limit: 20 }),
   ]);

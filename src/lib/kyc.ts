@@ -17,6 +17,4 @@ export function verifyKycSignature(docId: string, exp: string | null, sig: strin
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export const KYC_TYPES = { pan: "PAN card", aadhaar: "Aadhaar", photo: "Photograph", address_proof: "Address proof", passport: "Passport (NRI)", oci: "OCI card (NRI)" } as const;
-export const KYC_MAX_BYTES = 5 * 1024 * 1024;
-export const KYC_MIME = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+export { KYC_TYPES, KYC_MAX_BYTES, KYC_MIME } from "./kyc-types";
