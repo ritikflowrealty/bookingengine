@@ -76,7 +76,8 @@ export const towers = pgTable("towers", {
   basements: integer("basements").notNull().default(0),
   unitsPerFloor: integer("units_per_floor").notNull(),
   unitNumberFormat: text("unit_number_format").notNull().default("{tower}-{floor}{series:02}"),
-  style: jsonb("style").$type<{ template?: string; color?: string }>(),
+  // Also holds per-series extras (corner, tags, price attrs) and the first floor; see src/lib/admin/units-db.ts.
+  style: jsonb("style").$type<{ template?: string; color?: string; startFloor?: number; series?: Record<string, { corner?: boolean; tags?: string[]; priceAttrs?: Record<string, number> }> }>(),
 });
 
 export const unitSeries = pgTable(

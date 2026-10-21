@@ -92,7 +92,16 @@ export async function seed(db: DB, opts: { demo: boolean }) {
   for (const t of towerDefs) {
     const [tower] = await db
       .insert(s.towers)
-      .values({ projectId: t.project.id, phaseId: t.phase.id, name: t.name, code: t.code, floors: t.floors, unitsPerFloor: t.series.length })
+      .values({
+        projectId: t.project.id,
+        phaseId: t.phase.id,
+        name: t.name,
+        code: t.code,
+        floors: t.floors,
+        unitsPerFloor: t.series.length,
+        // Per-series extras the admin structure editor reads back (see src/lib/admin/units-db.ts TowerStyle).
+        style: { startFloor: 0, series: Object.fromEntries(t.series.map((x) => [x.series, { corner: !!x.corner, tags: x.tags ?? [], priceAttrs: x.priceAttrs ?? {} }])) },
+      })
       .returning();
     const seriesRows = await db
       .insert(s.unitSeries)
