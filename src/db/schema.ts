@@ -334,6 +334,17 @@ export const syncLog = pgTable("sync_log", {
   at: createdAt(),
 });
 
+// Shareable cost-sheet links (/s/<token>): the quote is frozen at creation, valid for `expiresAt`.
+export const shareLinks = pgTable("share_links", {
+  token: text("token").primaryKey(),
+  unitId: uuid("unit_id").notNull().references(() => units.id),
+  createdBy: uuid("created_by").references(() => users.id),
+  customerName: text("customer_name"),
+  costSheet: jsonb("cost_sheet").$type<CostSheet>().notNull(), // customer view only
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: createdAt(),
+});
+
 export const auditLog = pgTable("audit_log", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   actorId: uuid("actor_id"),
