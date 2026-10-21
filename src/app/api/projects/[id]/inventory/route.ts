@@ -6,10 +6,12 @@ import { currentStaff } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { getInventory } from "@/lib/inventory/service";
 import { toClientUnit } from "@/lib/inventory/client-unit";
+import { housekeep } from "@/lib/inventory/housekeeping";
 
 // Live inventory for open screens (polled every few seconds). Customers use the booking flow's own endpoint.
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  housekeep();
   const user = await currentStaff();
   const db = await getDb();
   const project = await db.query.projects.findFirst({ where: eq(projects.id, id) });

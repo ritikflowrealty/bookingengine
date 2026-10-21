@@ -57,6 +57,7 @@ export type PriceListConfig = {
   registration?: ChargeRule[];
   paymentPlan?: { name: string; excludeLines?: string[]; milestones: Milestone[] };
   validityHours?: number;
+  terms?: string[]; // printed on cost sheets and PDFs
 };
 
 export type UnitPricingInput = {

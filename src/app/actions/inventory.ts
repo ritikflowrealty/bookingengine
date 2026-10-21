@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import * as s from "@/db/schema";
 import { requireStaff } from "@/lib/auth/session";
-import { assertCan, can, DEFAULT_DISCOUNT_LIMITS, discountApprover, type TreeUser } from "@/lib/auth/permissions";
+import { assertCan, can } from "@/lib/auth/permissions";
+import { discountNeedsApproval } from "@/lib/inventory/discounts";
 import { randomToken } from "@/lib/auth/password";
 import { toCustomerView } from "@/lib/pricing/engine";
 import { audit, extendHold, holdUnit, quote, releaseUnit, setBlocked, startBooking } from "@/lib/inventory/service";
@@ -23,19 +24,6 @@ async function run<T>(fn: () => Promise<T>): Promise<Result<T>> {
   }
 }
 
-/** Approved discount (PSF) this user may apply on this unit, if any. */
-async function approvedDiscount(userId: string, unitId: string) {
-  const db = await getDb();
-  const rows = await db.query.approvals.findMany({ where: and(eq(s.approvals.type, "discount"), eq(s.approvals.requestedBy, userId), eq(s.approvals.unitId, unitId), eq(s.approvals.status, "approved")) });
-  return Math.max(0, ...rows.map((r) => Number((r.payload as { discountPsf?: number }).discountPsf ?? 0)));
-}
-
-async function treeAndLimits(projectId: string) {
-  const db = await getDb();
-  const [users, project] = await Promise.all([db.query.users.findMany(), db.query.projects.findFirst({ where: eq(s.projects.id, projectId) })]);
-  return { tree: new Map<string, TreeUser>(users.map((u) => [u.id, u])), limits: { ...DEFAULT_DISCOUNT_LIMITS, ...(project?.discountLimits ?? {}) } };
-}
-
 export async function getQuoteAction(unitId: string, opts: { discountPsf?: number; offer?: string } = {}) {
   return run(async () => {
     const user = await requireStaff();
@@ -44,18 +32,7 @@ export async function getQuoteAction(unitId: string, opts: { discountPsf?: numbe
     if (!unit) throw Object.assign(new Error("Unit not found"), { status: 404 });
     assertCan(user.actor, "inventory.view", { projectId: unit.projectId });
     const discountPsf = Math.max(0, opts.discountPsf ?? 0);
-    const { tree, limits } = await treeAndLimits(unit.projectId);
-    let needsApprovalFrom: string | null = null;
-    if (discountPsf > 0) {
-      const approved = await approvedDiscount(user.id, unitId);
-      if (discountPsf > approved) {
-        try {
-          needsApprovalFrom = discountApprover(tree, user.id, discountPsf, limits)?.name ?? null;
-        } catch {
-          needsApprovalFrom = "leadership";
-        }
-      }
-    }
+    const needsApprovalFrom = (await discountNeedsApproval(db, user.id, unitId, unit.projectId, discountPsf))?.name ?? null;
     const { sheet, priceList } = await quote(db, unitId, { offer: opts.offer, discount: discountPsf ? { psf: discountPsf, label: "Special discount" } : undefined });
     const internal = can(user.actor, "inventory.view_internal", { projectId: unit.projectId });
     const cfg = priceList.config;
@@ -119,9 +96,9 @@ export async function requestDiscountAction(unitId: string, discountPsf: number,
     const db = await getDb();
     const unit = (await db.query.units.findFirst({ where: eq(s.units.id, unitId) }))!;
     assertCan(user.actor, "costsheet.share", { projectId: unit.projectId });
-    const { tree, limits } = await treeAndLimits(unit.projectId);
-    const approver = discountApprover(tree, user.id, discountPsf, limits);
+    const approver = await discountNeedsApproval(db, user.id, unitId, unit.projectId, discountPsf);
     if (!approver) throw Object.assign(new Error("This discount is within your limit; no approval needed"), { status: 400 });
+    if (!approver.id) throw Object.assign(new Error("Nobody in your reporting line can approve this discount"), { status: 400 });
     const [a] = await db.insert(s.approvals).values({ type: "discount", projectId: unit.projectId, unitId, requestedBy: user.id, approverId: approver.id, payload: { discountPsf, unitNumber: unit.number }, comments }).returning();
     await audit(db, { actorId: user.id, action: "approval.request", entity: "approval", entityId: a.id, after: { type: "discount", discountPsf } });
     return { approver: approver.id };
@@ -135,11 +112,7 @@ export async function shareCostSheetAction(unitId: string, opts: { discountPsf?:
     const unit = (await db.query.units.findFirst({ where: eq(s.units.id, unitId) }))!;
     assertCan(user.actor, "costsheet.share", { projectId: unit.projectId });
     const discountPsf = opts.discountPsf ?? 0;
-    if (discountPsf > 0) {
-      const { tree, limits } = await treeAndLimits(unit.projectId);
-      const ok = discountPsf <= (await approvedDiscount(user.id, unitId)) || (() => { try { return discountApprover(tree, user.id, discountPsf, limits) === null; } catch { return false; } })();
-      if (!ok) throw Object.assign(new Error("Get this discount approved before sharing"), { status: 403 });
-    }
+    if (await discountNeedsApproval(db, user.id, unitId, unit.projectId, discountPsf)) throw Object.assign(new Error("Get this discount approved before sharing"), { status: 403 });
     const { sheet, priceList } = await quote(db, unitId, { offer: opts.offer, discount: discountPsf ? { psf: discountPsf, label: "Special discount" } : undefined });
     const token = randomToken(12);
     const hours = priceList.config.validityHours ?? 24;
@@ -157,13 +130,9 @@ export async function startStaffBookingAction(unitId: string, input: { phone: st
     const phone = normalizePhone(input.phone);
     if (!input.name.trim()) throw Object.assign(new Error("Customer name is required"), { status: 400 });
     const discountPsf = input.discountPsf ?? 0;
-    if (discountPsf > 0) {
-      const unit = (await db.query.units.findFirst({ where: eq(s.units.id, unitId) }))!;
-      const { tree, limits } = await treeAndLimits(unit.projectId);
-      let within = false;
-      try { within = discountApprover(tree, user.id, discountPsf, limits) === null; } catch {}
-      if (!within && discountPsf > (await approvedDiscount(user.id, unitId))) throw Object.assign(new Error("This discount needs approval first"), { status: 403 });
-    }
+    const unit = await db.query.units.findFirst({ where: eq(s.units.id, unitId) });
+    if (!unit) throw Object.assign(new Error("Unit not found"), { status: 404 });
+    if (await discountNeedsApproval(db, user.id, unitId, unit.projectId, discountPsf)) throw Object.assign(new Error("This discount needs approval first"), { status: 403 });
     let customer = await db.query.customers.findFirst({ where: eq(s.customers.phone, phone) });
     if (!customer) [customer] = await db.insert(s.customers).values({ phone, name: input.name.trim(), email: input.email?.trim() || null }).returning();
     const booking = await startBooking(db, { unitId, customerId: customer.id, actor: user.actor, discountPsf, holdMinutes: 24 * 60 });
