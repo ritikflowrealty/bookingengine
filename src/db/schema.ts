@@ -1,9 +1,10 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, bigserial } from "drizzle-orm/pg-core";
+import { boolean, customType, index, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid, bigserial } from "drizzle-orm/pg-core";
 import type { PriceListConfig, CostSheet } from "@/lib/pricing/engine";
 import { BOOKING_STATUSES, UNIT_STATUSES } from "@/lib/booking/state";
 import { ROLES } from "@/lib/auth/permissions";
 
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
 const id = () => uuid("id").primaryKey().defaultRandom();
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
@@ -290,7 +291,11 @@ export const kycDocuments = pgTable("kyc_documents", {
   id: id(),
   bookingId: uuid("booking_id").notNull().references(() => bookings.id),
   type: text("type").notNull(), // aadhaar | pan | photo | address_proof | passport | oci
-  storageKey: text("storage_key").notNull(), // private blob key; served only via short-lived signed URLs
+  storageKey: text("storage_key").notNull(), // file name as uploaded
+  mime: text("mime").notNull().default("application/octet-stream"),
+  size: integer("size").notNull().default(0),
+  // shortcut: files live in Postgres (private by construction, ≤5 MB each); move to private object storage if volume grows.
+  content: bytea("content"),
   uploadedAt: createdAt(),
   verifiedBy: uuid("verified_by").references(() => users.id),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),

@@ -1,5 +1,5 @@
 {
-  "id": "be9f8aa2-d28d-4dc0-9dba-4cdbf19488f0",
+  "id": "202a153e-a445-47c5-9d57-cec9b8730ac8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -709,6 +709,26 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "mime": {
+          "name": "mime",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'application/octet-stream'"
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "content": {
+          "name": "content",
+          "type": "bytea",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

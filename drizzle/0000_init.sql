@@ -88,6 +88,9 @@ CREATE TABLE "kyc_documents" (
 	"booking_id" uuid NOT NULL,
 	"type" text NOT NULL,
 	"storage_key" text NOT NULL,
+	"mime" text DEFAULT 'application/octet-stream' NOT NULL,
+	"size" integer DEFAULT 0 NOT NULL,
+	"content" "bytea",
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"verified_by" uuid,
 	"verified_at" timestamp with time zone
