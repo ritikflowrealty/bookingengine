@@ -3,11 +3,11 @@ import type { CostSheet } from "@/lib/pricing/engine";
 const inr = (n: number) => (n < 0 ? "−₹" : "₹") + Math.abs(Math.round(n)).toLocaleString("en-IN");
 
 /** Renders a customer-safe cost sheet. Pass the result of toCustomerView() for customers. */
-export function CostSheetView({ title, sheet }: { title: string; sheet: Omit<CostSheet, "internal"> }) {
+export function CostSheetView({ title, sheet, compact }: { title: string; sheet: Omit<CostSheet, "internal">; compact?: boolean }) {
   const row = "flex justify-between gap-4 py-2 border-b border-line";
   return (
-    <section className="rounded-2xl bg-surface p-5 shadow-sm sm:p-8">
-      <h2 className="text-xl font-semibold">{title}</h2>
+    <section className={compact ? "" : "rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-8"}>
+      <h2 className={compact ? "text-base font-semibold" : "text-xl font-semibold"}>{title}</h2>
       <p className="mt-1 text-sm text-muted">
         {sheet.areaLabel}: {sheet.area.toLocaleString("en-IN")} · Base ₹{sheet.basePsf.toLocaleString("en-IN")} PSF
         {sheet.validityHours ? ` · Valid for ${sheet.validityHours} hours` : ""}

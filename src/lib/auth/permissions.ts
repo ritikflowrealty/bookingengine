@@ -74,7 +74,7 @@ export function assertCan(a: Actor, action: Action, scope: Scope = {}) {
 export type DiscountLimits = Partial<Record<Role, number>>;
 export const DEFAULT_DISCOUNT_LIMITS: DiscountLimits = { sales_manager: 0, team_lead: 50, leadership: Infinity, super_admin: Infinity };
 
-export type TreeUser = { id: string; role: Role; managerId?: string | null };
+export type TreeUser = { id: string; role: Role; managerId?: string | null; name?: string };
 
 /**
  * Who must approve a discount requested by `requesterId`? Returns null when the requester's own limit covers it,
