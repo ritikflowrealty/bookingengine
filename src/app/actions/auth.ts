@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb } from "@/db";
 import * as s from "@/db/schema";
@@ -12,12 +12,21 @@ export async function login(_: { error?: string } | undefined, form: FormData) {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
   const db = await getDb();
+  const [recent] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(s.auditLog)
+    .where(and(eq(s.auditLog.action, "auth.login_failed"), eq(s.auditLog.entityId, email), gt(s.auditLog.at, new Date(Date.now() - 15 * 60_000))));
+  if (recent.n >= 10) return { error: "Too many attempts. Try again in 15 minutes." };
   const user = await db.query.users.findFirst({ where: eq(s.users.email, email) });
   // Same message for unknown email and wrong password, so accounts can't be enumerated.
-  if (!user || !user.active || !verifyPassword(password, user.passwordHash)) return { error: "Email or password is incorrect" };
+  if (!user || !user.active || !verifyPassword(password, user.passwordHash)) {
+    await audit(db, { actorType: "system", action: "auth.login_failed", entity: "login", entityId: email });
+    return { error: "Email or password is incorrect" };
+  }
   await createStaffSession(user.id);
   await audit(db, { actorId: user.id, action: "auth.login", entity: "user", entityId: user.id });
-  redirect(String(form.get("next") || "/app"));
+  const next = String(form.get("next") ?? "");
+  redirect(next.startsWith("/app") && !next.startsWith("//") ? next : "/app"); // never redirect off-site
 }
 
 export async function logout() {
