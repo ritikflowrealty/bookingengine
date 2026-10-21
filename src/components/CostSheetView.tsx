@@ -1,6 +1,6 @@
 import type { CostSheet } from "@/lib/pricing/engine";
 
-const inr = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
+const inr = (n: number) => (n < 0 ? "−₹" : "₹") + Math.abs(Math.round(n)).toLocaleString("en-IN");
 
 /** Renders a customer-safe cost sheet. Pass the result of toCustomerView() for customers. */
 export function CostSheetView({ title, sheet }: { title: string; sheet: Omit<CostSheet, "internal"> }) {

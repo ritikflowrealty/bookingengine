@@ -52,6 +52,9 @@ Read this, `DECISIONS.md` and `git log` at the start of every session; continue 
 - [ ] Reports (team, project, discount, holds), audit-log viewer
 - [ ] Security review, load test of hold/booking races, production deploy (on your go-ahead)
 
+## Previews
+After every visible change: `npm run dev`, then `node scripts/screenshots.mjs <dir> http://localhost:3000 [paths…]` (phone 390 px + desktop 1440 px) and send the PNGs to Ritik.
+
 ## Blockers / questions for you
 1. **The brief was cut off** mid-section 8 ("DXF import as a…"); sections 9–12 did not arrive. Please resend them.
 2. **Riverine East-facing premium**: ₹300 (launch sheet, Area statement) or ₹250 (T&C text)?
