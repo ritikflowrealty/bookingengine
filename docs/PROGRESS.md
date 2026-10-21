@@ -12,7 +12,8 @@ Read this, `DECISIONS.md` and `git log` at the start of every session; continue 
 - [x] `/preview/cost-sheet` page rendering the three sample cost sheets
 
 ## Phase 1: database, auth, admin basics
-- [ ] Provision Neon via Vercel Marketplace; connect Vercel project to this repo (preview on every push)
+- [x] Vercel project connected (production = `main`; every push to `ccr-a34cbb36-8q9v2k` gets a preview at https://bookingengine-git-ccr-a34cbb36-8q9v2k-ritikflowrealty.vercel.app, behind Vercel login)
+- [ ] Provision Neon via Vercel Marketplace (Vercel connector still lacks access to the `ritikflowrealty` team: 403)
 - [ ] Switch `src/db/index.ts` to the WebSocket Pool driver (transactions); run migrations in CI/deploy
 - [ ] Staff auth: email + password, session cookies, optional email/WhatsApp OTP; middleware guards
 - [ ] Users + reporting tree + project assignment admin; audit-log helper used by every mutation
@@ -58,7 +59,7 @@ After every visible change: `npm run dev`, then `node scripts/screenshots.mjs <d
 ## Blockers / questions for you
 1. **The brief was cut off** mid-section 8 ("DXF import as a…"); sections 9–12 did not arrive. Please resend them.
 2. **Riverine East-facing premium**: ₹300 (launch sheet, Area statement) or ₹250 (T&C text)?
-3. **Vercel + Neon**: OK to create the Vercel project for `ritikflowrealty/bookingengine` and add Neon from the Marketplace on your team?
+3. **Neon**: add it from the Vercel Marketplace (Storage → Neon) on the bookingengine project, or grant the Vercel connector team access so Claude can.
 4. Booking form module from the website: please share it.
 
 ## Session log
