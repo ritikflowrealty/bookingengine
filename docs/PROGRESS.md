@@ -23,10 +23,9 @@ Full flow smoke test: `node scripts/e2e-booking.mjs <dir> http://localhost:3000 
 - [x] Kiosk `/kiosk/<slug>`: big touch UI, full-screen, 2-min idle reset with data clear, back-button block, staff PIN exit
 - [x] Share page `/s/<token>` + PDF; landing page with Book now links
 - [x] Notifications queue (`sync_jobs`) + worker with backoff; WhatsApp adapters (DoubleTick, Gallabox); Totality mappers; cron route
-- [ ] Admin area (projects, structure → unit generation, bulk edit + CSV/XLSX import/export, price-list editor with versions + live preview, users + reporting tree, audit log) — in progress
+- [x] Admin area `/app/admin` (super admin): projects + integrations (env-var names only) + discount limits, tower/series structure → unit generation (creates missing only), bulk unit editor + CSV/XLSX export + import with diff preview (accepts developer sheet headers), price-list versions (duplicate / activate / archive) with structured editor, JSON tab and live cost-sheet preview, users + reporting tree, audit log with before/after diff
 
 ## Next
-- [ ] Merge + verify the admin area
 - [ ] Connect Neon (`DATABASE_URL`) and set `ADMIN_EMAIL` / `ADMIN_PASSWORD`, `SESSION_SECRET`, `CRON_SECRET`, `APP_URL` in Vercel; run `npm run db:migrate`
 - [ ] PayU test keys per project → test a real sandbox payment end to end
 - [ ] WhatsApp: create/approve the Authentication (OTP) and Utility templates on DoubleTick/Gallabox, set template env names, test real sends; SMS fallback provider
